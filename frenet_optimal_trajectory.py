@@ -189,7 +189,6 @@ def calc_MPC_frenet_paths(initial, estimated):
 
     frenet_paths = []
     for init in initial:
-        #x = init.x[-1]
         #y = init.y[-1]
         yaw = init.yaw[-1]+0.01 #The yaw of the track against a global x-axis, eta in my report
         #Kappa =
