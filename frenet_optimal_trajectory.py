@@ -250,8 +250,8 @@ def calc_MPC_frenet_paths(initial, estimated):
                    [0, 0, 1/(dtt*c)]]) #i DT verkar fungera!
     Ts = dtt*c
     A = np.multiply(Ts,A)
-    B = np.matrix([[0, 0],
-                   [((1/c)-ey_hat)/(math.cos(e_psi_hat)*(1/c)), 0],
+    B = np.matrix([[((1/c)-ey_hat)/(math.cos(e_psi_hat)*(1/c)), 0],
+                   [0, 0],
                    [0, dtt]])
 
     X_0 = [x1, x2, x3] #START VECTOR EACH ITERATION
