@@ -29,7 +29,7 @@ MAX_KAPPA = 10
 MAX_ACCEL = 10.0  # maximum acceleration [m/ss]
 MAX_ROAD_WIDTH = 2.0  # maximum road width [m]
 N = 10  #Horizon
-target_speed = 11.0
+target_speed = 5.0
 
 dt = 0.1  # [s]
 
@@ -245,8 +245,8 @@ def calc_MPC_frenet_paths(initial, estimated):
     m = 2     #inputs
     dtt = 0.1 #delta T in seconds
     #updatera A och B matriserna
-    A = np.matrix([[(1/dtt*c)-math.tan(ey_hat)*v_hat, ((1/c - ey_hat)*v_hat)/(math.tan(e_psi_hat)**2 + 1), math.tan(e_psi_hat)*(1/c - ey_hat)],
-                   [-((v_hat*Kappa_hat)/(math.cos(e_psi_hat))),(1/(dtt*c))+(math.sin(e_psi_hat)*Kappa_hat*((1/c)-ey_hat)*v_hat)/(math.cos(e_psi_hat)**2), (Kappa_hat*((1/c)-ey_hat))/(math.cos(e_psi_hat)) - psi/c],
+    A = np.matrix([[-((v_hat*Kappa_hat)/(math.cos(e_psi_hat))),(1/(dtt*c))+(math.sin(e_psi_hat)*Kappa_hat*((1/c)-ey_hat)*v_hat)/(math.cos(e_psi_hat)**2), (Kappa_hat*((1/c)-ey_hat))/(math.cos(e_psi_hat)) - psi/c],
+                   [(1 / dtt * c) - math.tan(ey_hat) * v_hat, ((1 / c - ey_hat) * v_hat) / (math.tan(e_psi_hat) ** 2 + 1), math.tan(e_psi_hat) * (1 / c - ey_hat)],
                    [0, 0, 1/(dtt*c)]]) #i DT verkar fungera!
     Ts = dtt*c
     A = np.multiply(Ts,A)
@@ -285,16 +285,16 @@ def calc_MPC_frenet_paths(initial, estimated):
         cost += ((math.cos(e_psi_hat)*(1/c_hat)*v_hat)/((1/c_hat)-ey_hat)**2)*x2
         cost += (((1/c_hat)*math.cos(e_psi_hat))/((1/c_hat)-ey_hat))*x3
         constr += [x[:, t+1] == A*x[:, t] + B*u[:, t]]
-        #constr += [x[0, t] <= MAX_Psi]                  #upper and lower car angle
-        #constr += [x[0, t] >= -MAX_Psi]
-        #constr += [x[1, t] <= MAX_ROAD_WIDTH]           #upper and lower road with bound
-        #constr += [x[1, t] >= -MAX_ROAD_WIDTH]
+        constr += [x[0, t] <= MAX_Psi]                  #upper and lower car angle
+        constr += [x[0, t] >= -MAX_Psi]
+        constr += [x[1, t] <= MAX_ROAD_WIDTH]           #upper and lower road with bound
+        constr += [x[1, t] >= -MAX_ROAD_WIDTH]
         #constr += [x[2, t] <= MAX_v]                   #upper and lower velocity
         #constr += [x[2, t] >= -MAX_v]
-        #constr += [u[0,t] <= MAX_KAPPA]                 #upper accel bound
-        #constr += [u[0,t] >= -MAX_KAPPA]                #lower accel bound
-        #constr += [u[1,t] <= MAX_ACCEL]                 #upper accel bound
-        #constr += [u[1,t] >= -MAX_ACCEL]                #lower accel bound
+        constr += [u[0,t] <= MAX_KAPPA]                 #upper accel bound
+        constr += [u[0,t] >= -MAX_KAPPA]                #lower accel bound
+        constr += [u[1,t] <= MAX_ACCEL]                 #upper accel bound
+        constr += [u[1,t] >= -MAX_ACCEL]                #lower accel bound
     constr += [x[:, 0] == X_0]
     constr += [u[:, 0] == U_0]
     prob = cvxpy.Problem(cvxpy.Minimize(-cost), constr)
@@ -607,13 +607,16 @@ def main():
 
     wyi = [0.0, 0.0,  5.0,  0.0, 0.0, 0.0, 5.0, 0.0, 0.0,
            20.0, 40.0, 40.0, 40.0, 45.0, 40.0, 35.0, 40.0, 40.0, 40.0, 40.0, 20.0, 0.0, 0.0, 0.0]
-
+    '''
+    wxi = [0.0, 2.0, 10.0, 20.0, 30.0, 40.0, 50.0, 52.0]
+    wyi = [0.0, 0.0, 0.0, 20.0, 20.0, 0.0, 0.0, 0.0]
+    '''
     wx += wxi
     wy += wyi
 
 
     tx, ty, tyaw, tc, csp, LUTs, LUTd, LUTx, LUTy = generate_target_course(wx, wy) #Get ut target-x (tx) Target-y (ty) target yaw, target Course! csp(the whole function handle)osv.
-
+    print "tx", tx
     x_plus, y_plus, x_minus, y_minus = [], [], [], []#skapar visuella constraints
     for i in range(len(tyaw)):
         x_plus.append(tx[i] + MAX_ROAD_WIDTH * math.sin(tyaw[i]))
@@ -661,7 +664,7 @@ def main():
     fpp.s = [0, 0]
     #fpp.s_d = [c_speed, c_speed]
     #fpp.s_dd = [c_acc, c_acc]
-    fpp.d = [1, 1]
+    fpp.d = [0, 0]
     #fpp.d_d = [c_d_d, c_d_d]
     #fpp.d_dd = [c_d_dd, c_d_dd]
     fpp.v = [5, 5]
@@ -670,7 +673,7 @@ def main():
     fpp.yaw = [tyaw[0], tyaw[0]]
     fpp.c = [1, 1]
     fpp.psi = [0, 0]
-    fpp.mpc_a = [0, 0]
+    fpp.mpc_a = [5, 5]
     fpp.mpc_kappa = [0, 0]
 
     initial = []
